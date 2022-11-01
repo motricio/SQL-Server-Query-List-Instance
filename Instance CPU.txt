@@ -1,4 +1,11 @@
-1. [Conteo Total de Ejecuciones]
+-- =============================================
+-- Author:		Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	Estadisticas de CPU y consumo
+-- =============================================
+
+
+--1. [Conteo Total de Ejecuciones]
 SELECT
     Db_name(st.dbid) [Base de Datos],
     Object_schema_name(st.objectid, dbid) [Schema],
@@ -18,7 +25,7 @@ GROUP  BY
 ORDER  BY
         Max(cp.usecounts)
 
-2. [Procedimientos que Consumen mas CPU]
+--2. [Procedimientos que Consumen mas CPU]
 
 SELECT
     Db_name(st.dbid)
@@ -42,7 +49,7 @@ GROUP  BY
 ORDER  BY
     Sum(qs.total_worker_time) DESC
 
-3. [Procedimientos con mayor tiempo de ejecucion]
+--3. [Procedimientos con mayor tiempo de ejecucion]
 
 SELECT
     Db_name(st.dbid) [Base de Datos, 
