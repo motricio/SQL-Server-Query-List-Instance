@@ -1,0 +1,151 @@
+-- =============================================
+-- Author:           Mauricio Rodriguez R.
+-- Create date:      2017-01-01
+-- Updated date:	 2017-10-01
+-- Description:      Consulta para determinar la sesiones activas 
+-- consumiendo recursos en la instancia SQL
+-- Diseñado para soportar versiones 2005 SQL Server en adelante
+-- =============================================
+
+DECLARE @TIME_START as datetime;
+DECLARE @LOCAL_NET_ADDRESS AS VARCHAR(100);
+DECLARE @LOCAL_TCP_PORT AS VARCHAR(100);
+DECLARE @SERVICE_ACCOUNT AS VARCHAR(100);
+DECLARE @PRODUCT_VERSION_SHORT AS VARCHAR(4);
+DECLARE @TSQL AS NVARCHAR(2000);
+DECLARE @TSQL2 AS NVARCHAR(1000);
+DECLARE @OS_VIRTUAL_MACHINE_TYPE_DESC AS VARCHAR(50);
+DECLARE @OS_WINDOWS_RELEASE AS VARCHAR(200);
+DECLARE @PRODUCT_VERSION_INT AS DECIMAL(10,1);
+
+SET @PRODUCT_VERSION_INT =  
+cast((cast(PARSENAME(REPLACE(CAST(SERVERPROPERTY('productversion') AS VARCHAR(20)),',','.'),4) as varchar(2))
++'.'+cast(PARSENAME(REPLACE(CAST(SERVERPROPERTY('productversion') AS VARCHAR(20)),',','.'),3) as varchar(1))
++cast(PARSENAME(REPLACE(CAST(SERVERPROPERTY('productversion') AS VARCHAR(20)),',','.'),2) as varchar(1))
+) as decimal(10,3))
+
+print @PRODUCT_VERSION_INT;
+SET @PRODUCT_VERSION_SHORT = CAST(substring(@@VERSION,22,4) AS VARCHAR(200))
+
+
+IF @PRODUCT_VERSION_SHORT = '2005'
+BEGIN
+	CREATE TABLE #T1 (C1 DATETIME);
+	SET @TSQL = 'SELECT LOGIN_TIME FROM SYS.DM_EXEC_SESSIONS WHERE SESSION_ID = 1';
+		INSERT INTO #T1([C1]) EXECUTE sp_executesql @TSQL;SELECT @TIME_START= [C1]  FROM #T1 DROP TABLE #T1
+END
+ELSE
+BEGIN
+	CREATE TABLE #T2 (C1 DATETIME);
+	SET @TSQL = 'select [sqlserver_start_time] FROM sys.dm_os_sys_info';
+		INSERT INTO #T2([C1]) EXECUTE sp_executesql @TSQL;
+		SELECT @TIME_START=[C1] FROM #T2 DROP TABLE #T2
+END
+
+--@SERVICE_ACCOUNT
+IF exists(select name from sys.sysobjects where name = 'dm_server_services')
+BEGIN
+	CREATE TABLE #T3 (C1 VARCHAR(100));
+	SET @TSQL = 'select service_account from sys.dm_server_services where filename like ''%sqlservr.exe%'''
+		INSERT INTO #T3([C1]) EXECUTE sp_executesql @TSQL;
+		SELECT @SERVICE_ACCOUNT=[C1] FROM #T3 DROP TABLE #T3
+END
+ELSE 
+SET @SERVICE_ACCOUNT='Version 2008 or lower'
+
+--@OS_VIRTUAL_MACHINE_TYPE_DESC
+IF @PRODUCT_VERSION_INT > 10.510
+BEGIN
+	CREATE TABLE #T4 (C1 VARCHAR(20));
+	SET @TSQL =  'SELECT  VIRTUAL_MACHINE_TYPE_DESC FROM sys.dm_os_sys_info';
+		INSERT INTO #T4([C1]) EXECUTE sp_executesql @TSQL;
+		SELECT @OS_VIRTUAL_MACHINE_TYPE_DESC=[C1] FROM #T4
+		DROP TABLE #T4
+END
+ELSE 
+SET @OS_VIRTUAL_MACHINE_TYPE_DESC='Version 2008 or lower'
+
+--@OS_WINDOWS_RELEASE
+IF @PRODUCT_VERSION_INT > 10.510
+BEGIN
+	CREATE TABLE #T5 (C1 VARCHAR(100));
+	SET @TSQL =  
+	'SELECT 
+				CASE WINDOWS_RELEASE 
+				WHEN ''3.10'' THEN ''WINDOWS NT 3.1''
+				WHEN ''3.5'' THEN ''WINDOWS NT 3.5''
+				WHEN ''3.51'' THEN ''WINDOWS NT 3.51''
+				WHEN ''4'' THEN ''WINDOWS NT 4''
+				WHEN ''5'' THEN ''WINDOWS 2000''
+				WHEN ''5.2'' THEN ''WINDOWS SERVER 2003''
+				WHEN ''6.0'' THEN ''WINDOWS SERVER 2008''
+				WHEN ''6.1'' THEN ''WINDOWS SERVER 2008 R2''
+				WHEN ''6.2'' THEN ''WINDOWS SERVER 2012''
+				WHEN ''6.3'' THEN ''WINDOWS SERVER 2012 R2''
+				WHEN ''10'' THEN ''WINDOWS SERVER 2016''
+				ELSE ''UNKNOWN WINDOWS SERVER VERSION'' 
+				END AS [OS_WINDOWS_RELEASE]
+		 FROM sys.dm_os_windows_info;'
+	INSERT INTO #T5([C1]) EXECUTE sp_executesql @TSQL;
+		SELECT @OS_WINDOWS_RELEASE=[C1] FROM #T5
+		DROP TABLE #T5
+END
+ELSE 
+SET @OS_WINDOWS_RELEASE='Version 2008 or lower'
+
+
+
+select @LOCAL_NET_ADDRESS = Left(Main.IPs,Len(Main.IPs)-1) 
+From
+    (
+        Select distinct ExCn.session_id, 
+            (
+				select local_net_address + '  |  ' AS [text()] 
+				from 
+				(select RANK() OVER (ORDER BY local_net_address DESC) AS session_id,local_net_address 
+				from (select distinct local_net_address from sys.dm_exec_connections)as B) as A 
+				where local_net_address is not null and session_id is not null
+				order by session_id
+                For XML PATH ('')
+            ) [IPs]
+        From sys.dm_exec_connections ExCn
+    ) as [Main]
+
+select @LOCAL_TCP_PORT = Left(Main.IPs,Len(Main.IPs)-1) 
+From
+    (
+        Select distinct  ExCon.session_id, 
+            (
+				select local_net_address + '  |  ' AS [text()] 
+				from 
+				(select RANK() OVER (ORDER BY local_net_address DESC) AS session_id,local_net_address from 
+				 (select distinct local_net_address+':'+cast(local_tcp_port as varchar(20)) as local_net_address from sys.dm_exec_connections)as B) as A 
+				where local_net_address is not null and session_id is not null
+				order by session_id
+                For XML PATH ('')
+            ) [IPs]
+        From sys.dm_exec_connections ExCon
+    ) as [Main]
+
+
+
+SELECT 
+@@SERVERNAME as [SERVER_NAME],
+@@servicename as [SERVICE_NAME],
+@TIME_START AS [TIME_START],
+SERVERPROPERTY('computernamephysicalnetbios') AS[HOST_NAME],
+DEFAULT_DOMAIN() as [DOMAIN_NAME],
+@SERVICE_ACCOUNT as [SERVICE_ACCOUNT],
+@LOCAL_NET_ADDRESS AS [LOCAL_NET_ADDRESS],
+@LOCAL_TCP_PORT AS [LOCAL_TCP_IP_PORT],
+CASE SERVERPROPERTY('IsIntegratedSecurityOnly') WHEN 0 THEN 'Mixed' WHEN 1 THEN 'WindowsOnly' END AS [SERVICE_AUTHENTICATION],
+SERVERPROPERTY ('productlevel') AS [PRODUCT_LEVEL],
+SERVERPROPERTY ('edition') AS [EDITION],
+SERVERPROPERTY ('IsClustered') AS [ISCLUSTERED],
+SERVERPROPERTY ('Collation') AS [COLLATION],
+SERVERPROPERTY('productversion') as [PRODUCT_VERSION],
+substring(@@VERSION,22,4) as [PRODUCT_VERSION_SHORT],
+@@VERSION AS [PRODUCT_VERSION_FULL],
+CAST(@OS_VIRTUAL_MACHINE_TYPE_DESC AS VARCHAR(200)) AS [MACHINE_TYPE_DESC],
+CAST(@OS_WINDOWS_RELEASE AS VARCHAR(200)) AS [OS_WINDOWS_RELEASE]
+
