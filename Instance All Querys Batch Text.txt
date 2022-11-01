@@ -1,5 +1,8 @@
--- CREATE VIEW who_vw
--- AS
+-- =============================================
+-- Author:		  Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	Consulta para determinar todos los querys que se estan ejecutando y obtener informacion estadistica
+-- =============================================
 
 SELECT DISTINCT
 
