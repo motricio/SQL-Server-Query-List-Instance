@@ -1,3 +1,9 @@
+-- =============================================
+-- Author:		  Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	Always On sync status
+-- =============================================
+
 select 
 b.name,
 a.synchronization_health_desc,
