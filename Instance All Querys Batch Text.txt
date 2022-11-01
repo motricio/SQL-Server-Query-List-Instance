@@ -5,6 +5,8 @@ SELECT DISTINCT
 
 p.spid AS [SPID]
 
+
+
 ,DB_NAME(p.dbid) AS [DBName]
 
 ,COALESCE(OBJECT_NAME(txt.objectID,txt.DBID),
