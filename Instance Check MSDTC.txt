@@ -1,1 +1,7 @@
+-- =============================================
+-- Author:		Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	Confirmar estado de DTC
+-- =============================================
+
 EXEC master..xp_servicecontrol N'QUERYSTATE', 'MSDTC'
