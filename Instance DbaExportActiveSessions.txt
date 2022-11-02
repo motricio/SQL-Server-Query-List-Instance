@@ -1,3 +1,9 @@
+-- =============================================
+-- Author:		Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	Creates sp in master db to export ActiveSessions
+-- =============================================
+
 USE [master]
 GO
 
@@ -8,11 +14,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
--- =============================================
--- Author:	Mauricio Rodriguez SBD CLARO
--- Create date: 2016-11-09
--- Description:	SP exports sesiones activas a csv
--- =============================================
 CREATE PROCEDURE [dbo].[DbaExportActiveSessions]
 AS
 BEGIN
@@ -24,6 +25,4 @@ BEGIN
     --print @TSQL;
 	EXEC sp_executesql @TSQL;
 END
-
 GO
-
