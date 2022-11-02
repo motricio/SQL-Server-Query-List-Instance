@@ -1,1 +1,6 @@
+-- =============================================
+-- Author:		Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	Cluster Nodes
+-- =============================================
 SELECT * FROM sys.dm_os_cluster_nodes
