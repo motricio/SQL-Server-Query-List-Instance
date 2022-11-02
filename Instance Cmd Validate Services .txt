@@ -1,3 +1,9 @@
+-- =============================================
+-- Author:		Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	SQL Query Services validation (xp_cmdshell must be enabled)
+-- =============================================
+
 xp_cmdshell 'sc query MSSQLSERVER'
 
 xp_cmdshell 'sc query SQLSERVERAGENT'
