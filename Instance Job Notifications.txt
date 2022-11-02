@@ -1,7 +1,12 @@
+-- =============================================
+-- Author:		Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	
 -- Obtener el listado de Jobs de la Instancia
 -- Actualiza cada uno Job para notificar al operador por defecto DBA1
 -- El operador DBA1 dbe estar creado y activo
 -- El servicio Databasemail debe estar configurado y activo
+-- =============================================
 
 USE msdb;
 
@@ -29,6 +34,3 @@ WHILE @@FETCH_STATUS = 0
     END
 CLOSE CURSOR_1;
 DEALLOCATE CURSOR_1;
-
-
-
