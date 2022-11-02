@@ -1,10 +1,14 @@
+-- =============================================
+-- Author:		Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	
 -- Detener Jobs en ejecucion 
+-- =============================================
 
-USE msdb ;
+USE msdb;
 GO
 
-EXEC dbo.sp_stop_job
-    N'JOB_NAME' ;
+EXEC dbo.sp_stop_job N'JOB_NAME';
 GO
 
 -- Validar estado actual de un Job
