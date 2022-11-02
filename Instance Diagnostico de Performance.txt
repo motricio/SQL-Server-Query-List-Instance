@@ -1,3 +1,9 @@
+-- =============================================
+-- Author:		Mauricio Rodriguez R.
+-- Create date: 2017-01-01
+-- Description:	Task/process duration
+-- =============================================
+
 /* DURACION DE TAREAS */
 use master
 go
@@ -17,7 +23,7 @@ SELECT
     AND (estimated_completion_time > 0)
 
 
-/* duración de un db e recovery*/
+/* duraciÃ³n de un db e recovery*/
 	
 select percent_complete,
 total_elapsed_time/1000/60 as minutes_elapsed,
@@ -28,10 +34,7 @@ DATEADD(mi,(((100-(percent_complete))*(total_elapsed_time/1000))/percent_complet
  from sys.dm_exec_requests 
  where command='DB STARTUP'and percent_complete <> 0
  
- 
-	
-
-/*	QUERY EJECUTADOS*/
+ /*	QUERY EJECUTADOS*/
 
 SELECT SDER.[statement_start_offset],   
   SDER.[statement_end_offset],  
@@ -61,10 +64,6 @@ SELECT SDER.[statement_start_offset],
 FROM sys.[dm_exec_requests] SDER CROSS APPLY sys.[dm_exec_sql_text](SDER.[sql_handle]) DEST  
 WHERE SDER.session_id > 50  
 ORDER BY SDER.[session_id], SDER.[request_id]
-
-
-
-
 
 
 /*SESIONES ACTIVAS*/
@@ -146,9 +145,6 @@ from sys.dm_tran_locks locks join sys.dm_exec_sessions AS Sessions on locks.requ
 	CROSS APPLY sys.dm_exec_sql_text(sql_handle) AS Statements
 where locks.request_mode = 'X'
 
-
-
-
 /***********     Sesiones e cache con mayor consumo de CPU        *********/
 
 SELECT TOP 50 qs.creation_time, qs.execution_count, qs.total_worker_time as total_cpu_time,
@@ -158,12 +154,7 @@ SELECT TOP 50 qs.creation_time, qs.execution_count, qs.total_worker_time as tota
   FROM sys.dm_exec_query_stats qs CROSS APPLY sys.dm_exec_sql_text(plan_handle) AS t 
   CROSS APPLY sys.dm_exec_query_plan(plan_handle) AS qp ORDER BY qs.total_worker_time DESC
 
-
-select * from sys.dm_exec_sessions where session_id=91
-
-
-/* revisión de bloqueos*/
-
+/* revisiÃ³n de bloqueos*/
 
 SELECT
 db.name DBName,
@@ -182,9 +173,4 @@ INNER JOIN sys.dm_exec_connections ec1 ON ec1.session_id = tl.request_session_id
 INNER JOIN sys.dm_exec_connections ec2 ON ec2.session_id = wt.blocking_session_id
 CROSS APPLY sys.dm_exec_sql_text(ec1.most_recent_sql_handle) AS h1
 CROSS APPLY sys.dm_exec_sql_text(ec2.most_recent_sql_handle) AS h2
- GO
- --limpiar caches
-dbcc freeproccache
-dbcc dropcleanbuffers
-dbcc freesystemcache ('all')
-dbcc freesessioncache
+GO
